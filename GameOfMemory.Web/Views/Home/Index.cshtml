@@ -1,0 +1,299 @@
+﻿@{
+  ViewBag.Title = "Jogo da Memória";
+}
+
+
+@section head
+{
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+
+  <script src="/Scripts/handlebars-v1.3.0.js"></script>
+  <script src="/Scripts/jquery.signalR-1.0.0.js"></script>
+  <script src="/Signalr/hubs"></script>
+
+  <link href="~/Estilo/Bootstrap/bootstrap.css" rel="stylesheet" />
+  <link href="~/Estilo/Cartas.css" rel="stylesheet" />
+  <link href="~/Estilo/Site.css" rel="stylesheet" />
+  <link href="~/Estilo/Chat.css" rel="stylesheet" />
+  
+   
+}
+
+
+<body>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-3" id="registro">
+                <div style="padding: 4px">
+
+                    <h3 id="name">Digite seu nome:</h3>
+                    <input type="text" id="nomeJogador" class="form-control" placeholder="Digite aqui seu usuário" />
+                    <span class="help-block" id="alert"></span> 
+                    <input align="center" type="button" id="entrar" value="Entrar" class="btn btn-primary" />
+
+                    <br />
+
+                    <h3>Combinações</h3>
+                    <ul id="wins" class="list-inline"> </ul>
+
+                </div>
+            </div>
+
+            <div class="chat">
+                <div align="center">
+                    <h2>Chat</h2>
+                    <input type="text" id="mensagem" class="form-control" />
+                    <br />
+                </div>
+
+                <div align="left">
+                    <input type="hidden" id="nome" />
+                    <ul id="discussion"></ul>
+                </div>
+
+                <input type="button" id="enviar" value="Enviar" class="btn btn-primary" />
+                
+                
+            </div>
+
+
+
+
+            <div class="col-lg-10"></div>
+            <div id="board"> <!--Aqui entra o jogo--> </div>
+
+        </div>
+    </div>
+
+
+
+
+
+    <!--Todo script do funcionamento do Chat!!!-->
+    <script type="text/javascript">
+        $(function () {
+
+            //Cria uma varável para referenciar o HUB..
+            var chat = $.connection.gameHub;
+
+            // Cria uma função para o método de broadcast receber e enviar a mensagem para atodos.
+            chat.client.broadcastMessage = function (nome, mensagem) {
+
+                // Insere um HTML com o nome e a mensagem
+                var encodednome = $('<div />').text(nome).html();
+                var encodedMsg = $('<div />').text(mensagem).html();
+
+                $('#discussion').append('<li><strong>' + encodednome
+                    + '</strong>:&nbsp;&nbsp;' + encodedMsg + '</li>');
+            };
+            // 'Pega' o nome do usuário e armazena
+            $('#nomeJogador').val();
+
+            // Foca na caixa de mensagem inicialmente
+            $('#mensagem').focus();
+
+
+            // Inicia a conexão com o hub
+            $.connection.hub.start().done(function () {
+
+                $('#enviar').click(function () {
+
+                    // Chama o método Send na classe GameHub
+                    chat.server.enviar($('#nomeJogador').val(), $('#mensagem').val());
+
+                    // Limpa a caixa de mensagem e seta o focus para o comentário seguinte
+                    $('#mensagem').val('').focus();
+                });
+
+       
+            });     
+        });
+    </script>
+
+
+
+    <!--Usando o Handlebars para gerar o 'tabuleiro' de cartas-->
+    <script id="card-template" type="text/x-handlebars-template">
+        <div class="row">
+
+            <!--vetor que percorre a lista de cartas-->
+            {{#each Pieces}}
+            <div id="{{Name}}" class="click panel col-lg-2">
+
+                <!--Div que armazena as cartas de interrogação que são as que aparecem inicialmente-->
+                <div class="front">
+                    <img src="{{Question}}" width="150" height="150" />
+                </div>
+
+                <!--Div com as cartas que contém as bandeiras, elas inicialmente estão 'viradas'-->
+                <div class="back">
+                    <img src="{{Image}}" width="150" height="150" />
+                </div>
+            </div>
+
+
+            {{#endRow @@index}}
+        </div>
+
+        <div class="row">
+            {{/endRow}}
+            {{/each}}
+        </div>
+
+    </script>
+
+
+
+
+
+
+    <!--Script do jogo, movimenta todas ações-->
+    <script type="text/javascript">
+        $(function () {
+
+            //Desabilita inicialmente o campo do formulário de nome do registro de um jogador.
+            $('#entrar').attr('disabled', 'disabled');
+
+            //Atribui a variável gameHUb a conexão com a classe gameHub
+            var gameHub = $.connection.gameHub;
+
+            //Inicia a conexão do HUB
+            $.connection.hub.start().done(function () {
+
+                //Ao iniciar a conexão ele habilita o campo novamente..
+                $('#entrar').removeAttr('disabled');
+            });
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+            //Registra o nome do usuário ao clicar no botão de entrar
+            $('#entrar').click(function () {
+                var nome = $('#nomeJogador').val();
+
+                //'Chama' o servidor do HUB a função de Entrar passando o nome como parâmetro
+                gameHub.server.entrar(nome); 
+            });
+
+            //Manda para o cliente a função que desabilita o campo de formulário do nome e o botão de entrar do ID atual
+            var userId;
+            gameHub.client.jogadorCadastrado = function (user) { 
+                userId = user.Id;
+                $('#nomeJogador').attr('disabled', 'disabled');
+                $('#entrar').attr('disabled', 'disabled');
+            };
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+            Handlebars.registerHelper('endRow', function (conditional, options) {
+                if ((conditional + 1) % 5 == 0 && conditional > 0) {
+                    return options.fn(this);
+                }
+                return "";
+            });
+
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+            //Envia para os clientes do HUB um HTML
+            gameHub.client.espera = function () {
+                $('#alert').html("Aguardando por um adversário, por favor aguarde!!!");
+            };
+
+
+            gameHub.client.buildBoard = function (game) {
+                var template = Handlebars.compile($('#card-template').html());
+
+                $('#board').html(template(game.Board));
+
+                //emite uma mensagem caso o jogador que não é a vez de jogar fizer um clique..
+                if (userId == game.Vez) {
+                    $('#alert').html("<span style='color:green'> O jogo irá começar, você é o primeiro!!!</span>");
+
+                } else {
+                    $('#alert').html("<span style='color:red'> O jogo irá começar, seu oponente começa!!!</span>");
+                }
+
+                //Função que trata de que quem é a vez de jogar, exibindo em HTML na tela
+                gameHub.client.naoESuaVez = function (game) {
+                    if (userId != game.Vez) {
+                        $("#alert").html("<span style='color:red'> Não é sua vez de jogar. </span>");
+                    } else {
+                        $("#alert").html("<span style='color:green'> Sua vez de jogar. </span>");
+                    }
+                };
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+            //Ações que verificarão as combinações ao clicar nas cartas    
+                $('.click').click(function (e) {
+                    e.preventDefault();
+
+                    var id = this.id;
+                    var card = $('#' + id);
+
+                    //Se nem a classe 'match' e nem a classe 'flip' foram atribuidas a carta atual, invoca no servidor a o método de selecionar carta
+                    if (!card.hasClass('match') && !card.hasClass('flip')) {
+
+                        //o result me retorna o a função chamada no servidor de selecionar carta 
+                        gameHub.server.selecionarCarta(id).done(function (result) {
+
+                            //Tudo ocorrendo corretamente ele invoca a função para verificar a carta..
+                            if (result) {
+                                gameHub.server.verificaCarta(id);
+                            }
+                        });
+                    }
+                });
+            };
+
+
+
+            //Função para virar carta
+            gameHub.client.flipCard = function (card) {
+                var c = $('#card-' + card.Id);
+                $(c).addClass('flip'); //adiciona a classe 'flip' á variável
+            };
+
+            //Função para reverter o giro da carta
+            gameHub.client.resetFlip = function (cardA, cardB) {
+                var cA = $('#card-' + cardA.Id);
+                var cB = $('#card-' + cardB.Id);
+
+                var delay = setTimeout(function () {
+                    cA.removeClass("flip");
+                    cB.removeClass("flip");
+                }, 1500);
+            };
+
+
+            gameHub.client.showMatch = function (card, winner) {
+                $("#card-" + card.Id).addClass("match");
+                $("#card-" + card.Pair).addClass("match");
+
+                $("#alert").html("<strong>Opaa!!</strong> " + winner + " você fez uma combinação!");
+
+                //Insere a imagem combinada em tamanho reduzido na parte de combinações
+                if (winner == $('#nomeJogador').val()) {
+                    $('#wins').append("<li><img src='" + card.Image + "' width = '30' height='30'/> </li>");
+                }
+            };
+
+            //Função para tratar o vencedor.
+            gameHub.client.winner = function (card, winner) {
+
+                $("#card-" + card.Id).addClass("match");
+                $("#card-" + card.Pair).addClass("match");
+
+                $("#alert").html("<strong>Opaa!!</strong> " + winner + " você fez uma combinação!");
+
+                if (winner == $('#userNameTb').val()) {
+                    $('#model-headline').html('Parabéens!!!! >>>> VOCÊ VENCEU!! :) <<<<');
+                }
+                else {
+                    $('#model-headline').html('Aaah!, sinto muito, você perdeu :(');
+                }
+            };
+
+        });
+    </script>
+</body>

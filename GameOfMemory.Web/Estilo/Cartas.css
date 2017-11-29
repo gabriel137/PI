@@ -1,0 +1,72 @@
+﻿.panel 
+{    
+    margin: 0 auto;
+    width: 180px;
+    height: 180px;
+    position: relative;
+    font-size: .8em;
+
+    -webkit-perspective: 600px; /*perspectiva 3D vista dos navegadores principais*/
+    -moz-perspective: 600px; /*para mozila firefox*/
+}
+
+.panel .front 
+{
+    position: absolute;
+    top: 0;
+    z-index: 900;
+    width: inherit;
+    height: inherit;
+    text-align: center;
+
+    /*Faz o movimento de rotação das cartas, gira as carats no sentido horário com 0 graus */
+    -webkit-transform: rotateX(0deg) rotateY(0deg);
+    -webkit-transform-style: preserve-3d;
+
+    -webkit-backface-visibility: hidden; /*oculta  a parte de trás da carta*/
+
+    /*Mozila Firefox*/
+    -moz-transform: rotateX(0deg) rotateY(0deg);
+    -moz-backface-visibility: hidden;
+   
+    /*Efeito de transição em alguns navegadores*/
+
+    -moz-transition: all .4s ease-in-out; /*efeito de transição com fim mais lento*/
+    -webkit-transition: all .4s ease-in-out;
+    transition: all .4s ease-in-out;
+}
+
+        .panel.flip .front 
+        {
+            z-index: 900;
+            -webkit-transform: rotateY(180deg);
+            -moz-transform: rotateY(180deg);
+        }
+
+    .panel .back {
+        position: absolute;
+        top: 0;
+        z-index: 900;
+        width: inherit;
+        height: inherit;
+
+        
+        -webkit-transform: rotateY(-180deg);
+        -webkit-transform-style: preserve-3d;
+        -webkit-backface-visibility: hidden;
+        -moz-transform: rotateY(-180deg);
+
+        -moz-backface-visibility: hidden;
+
+       
+        -moz-transition: all .4s ease-in-out;
+        -webkit-transition: all .4s ease-in-out;
+        transition: all .4s ease-in-out;
+    }
+
+.panel.flip .back {
+    z-index: 1000;
+
+    -webkit-transform: rotateX(0deg) rotateY(0deg);
+    -moz-transform: rotateX(0deg) rotateY(0deg);
+}

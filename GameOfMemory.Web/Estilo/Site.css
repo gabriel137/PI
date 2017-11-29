@@ -1,0 +1,58 @@
+﻿
+body {
+    width: 100%;
+    position: relative;
+    display: inline-block;
+    margin: 0 auto;
+    font-size: 18px;
+    line-height: 1.5;
+    font-family: "Times New Roman", Helvetica, Arial, sans-serif;
+    color: black;
+    background-color: #ffffff;
+    text-align: center;
+
+}
+
+
+
+
+/*trata o tamanho das mini cartas que aparecem na combinação*/
+.list-inline li {
+    padding-left: 2px;
+    padding-right: 2px;
+    padding-bottom: 6px;
+}
+
+
+#board 
+{
+    position: absolute;
+    right: 50pt;
+    margin: 0 auto;
+}
+
+.container {
+    max-width: 1128px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+#registro {
+    position: absolute;
+    left: 10pt;
+    border: 2px solid #00ff21;
+    border-radius: 9px;
+    -webkit-transform: perspective(600);
+}
+
+
+
+
+
+
+@media screen and (max-width: 1128px) {
+
+    .container {
+        padding: 0 2.4em 0 2.4em;
+    }
+}

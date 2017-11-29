@@ -1,0 +1,27 @@
+﻿.chat 
+    {
+        position: fixed;
+        left: 10pt;
+        bottom: 5pt;
+        z-index: 100;
+
+        background-color: aquamarine;
+        border: 2px solid #00ffff;
+        border-radius: 5px;
+        padding: 10px;
+        margin: 10px 0;
+
+        overflow-y: scroll;
+        height: 40vh;
+        width: 40vh;
+
+        -webkit-transform: perspective(900);
+    }
+
+.chat::after 
+    {
+        content: "";
+        clear: both;
+        display: table;
+    }
+
